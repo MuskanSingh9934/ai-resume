@@ -30,6 +30,7 @@ export async function generateText(prompt: string) {
       throw new Error(`Generative API error: ${res.status} ${txt}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any = await res.json();
     // Try to extract a text candidate from common response shapes.
     const candidate =
@@ -48,7 +49,7 @@ export async function generateText(prompt: string) {
   }
 }
 
-export function mockAnalyze(resumeText: string, jobDescription?: string) {
+export function mockAnalyze(_resumeText: string, _jobDescription?: string) {
   // Lightweight mock analysis used when API key is not configured or call fails.
   return {
     atsScore: 72,
@@ -69,6 +70,7 @@ export function mockAnalyze(resumeText: string, jobDescription?: string) {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mockGeneratedResume(data: any) {
   return {
     name: data.name || "John Doe",
