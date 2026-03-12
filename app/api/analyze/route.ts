@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateText, mockAnalyze } from "../../../lib/genai";
+import { systemAnalysePrompt } from "@/lib/helper";
 
 export async function POST(req: Request) {
   try {
@@ -9,11 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing resumeText" }, { status: 400 });
     }
 
-    const prompt = jobDescription
-      ? `Compare this resume to the job description and return a JSON object with keys: atsScore (0-100 number), industry (string), sections (object with summary, skills, experience, education, projects), missingSkills (array), suggestions (array). Job Description:\n${jobDescription}\nResume:\n${resumeText}\nRespond ONLY with valid JSON.`
-      : `Perform an ATS-style resume analysis and return a JSON object with keys: atsScore (0-100 number), industry (string), sections (object with summary, skills, experience, education, projects), missingSkills (array), suggestions (array). Resume:\n${resumeText}\nRespond ONLY with valid JSON.`;
-
-    const aiText = await generateText(prompt);
+    const aiText = await generateText({ prompt: resumeText }, systemAnalysePrompt);
 
     if (aiText) {
       try {

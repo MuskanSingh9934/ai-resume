@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateText, mockGeneratedResume } from "../../../lib/genai";
+import { systemGeneratePrompt } from "@/lib/helper";
 
 export async function POST(req: Request) {
   try {
@@ -8,11 +9,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing user data" }, { status: 400 });
     }
 
-    const prompt = `Generate an ATS-friendly resume in JSON with keys: name, summary, skills (array), experience (array of {company, title, start, end, bullets}), education (array), projects (array). Use this input data: ${JSON.stringify(
-      data,
-    )}. Respond ONLY with valid JSON.`;
-
-    const aiText = await generateText(prompt);
+    const aiText = await generateText(
+      { prompt: JSON.stringify(data), jobDescription: data.jobDescription },
+      systemGeneratePrompt,
+    );
     if (aiText) {
       try {
         const parsed = JSON.parse(aiText);

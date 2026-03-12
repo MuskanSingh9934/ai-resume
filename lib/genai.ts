@@ -3,46 +3,23 @@
    lightweight fetch call so it doesn't rely on a specific client API shape.
 */
 
-export async function generateText(prompt: string) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
+import { GoogleGenAI } from "@google/genai";
 
-  // Best-effort call to Google's Generative Language REST endpoint.
-  // Users should ensure the correct model and URL for their account.
-  const url = `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=${apiKey}`;
-
+export async function generateText(
+  data: { prompt: string; jobDescription?: string },
+  system: string,
+) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        // This body shape may need adjustment depending on API version.
-        prompt: { text: prompt },
-        // Keep responses short enough to parse reliably.
-        maxOutputTokens: 1024,
-      }),
+    const res = await ai.models.generateContent({
+      model: "gemini-3.1-flash-lite-preview",
+      contents: JSON.stringify({ prompt: data.prompt, jobDescription: data.jobDescription }),
+      config: { systemInstruction: system },
     });
-
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`Generative API error: ${res.status} ${txt}`);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data: any = await res.json();
-    // Try to extract a text candidate from common response shapes.
-    const candidate =
-      data?.candidates?.[0]?.output ||
-      data?.candidates?.[0]?.content ||
-      data?.output ||
-      data?.result ||
-      null;
-
-    if (typeof candidate === "string") return candidate;
+    console.log("API Response:", res.text);
+    if (typeof res.text === "string") return res.text;
     // If the API returns nested objects, stringify them.
-    return JSON.stringify(candidate);
+    return JSON.stringify(res.text);
   } catch (err) {
     console.error("generateText error:", err);
     return null;
