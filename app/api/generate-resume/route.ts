@@ -13,17 +13,22 @@ export async function POST(req: Request) {
       { prompt: JSON.stringify(data), jobDescription: data.jobDescription },
       systemGeneratePrompt,
     );
+
     if (aiText) {
-      try {
-        const parsed = JSON.parse(aiText);
-        return NextResponse.json(parsed);
-      } catch (err) {
-        console.error("Failed to parse AI response, returning mock.", err);
+      // Strip markdown code fences if Gemini wraps the output
+      const cleaned = aiText
+        .replace(/^```(?:latex|tex)?\s*\n?/i, "")
+        .replace(/\n?```\s*$/i, "")
+        .trim();
+
+      if (cleaned.includes("\\documentclass")) {
+        return NextResponse.json({ latex: cleaned });
       }
     }
 
+    // Fallback mock
     const mock = mockGeneratedResume(data);
-    return NextResponse.json(mock);
+    return NextResponse.json({ latex: mock });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

@@ -48,13 +48,47 @@ export function mockAnalyze(_resumeText: string, _jobDescription?: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mockGeneratedResume(data: any) {
-  return {
-    name: data.name || "John Doe",
-    summary: data.summary || "Professional with experience in ...",
-    skills: data.skills || ["JavaScript", "TypeScript", "React"],
-    experience: data.experience || [],
-    education: data.education || [],
-    projects: data.projects || [],
-  };
+export function mockGeneratedResume(data: any): string {
+  const name = data.name || "John Doe";
+  const email = data.email || "email@example.com";
+  const phone = data.phone || "000-000-0000";
+  const skills = Array.isArray(data.skills)
+    ? data.skills.join(", ")
+    : data.skills || "JavaScript, TypeScript, React";
+  const education = data.education || "B.S. Computer Science";
+  const experience = data.experience || "Software Engineer at Company";
+  const projects = data.projects || "Project description";
+
+  return `\\documentclass{resume}
+\\usepackage[left=0.6in, top=0.6in, right=0.6in, bottom=0.6in]{geometry}
+
+\\name{${name}}
+\\address{
+${phone} \\\\
+\\href{mailto:${email}}{${email}}
+}
+
+\\begin{document}
+
+%---------------- EDUCATION ----------------%
+\\begin{rSection}{EDUCATION}
+${education}
+\\end{rSection}
+
+%---------------- TECHNICAL SKILLS ----------------%
+\\begin{rSection}{TECHNICAL SKILLS}
+\\textbf{Skills:} ${skills} \\\\
+\\end{rSection}
+
+%---------------- EXPERIENCE ----------------%
+\\begin{rSection}{EXPERIENCE}
+${experience}
+\\end{rSection}
+
+%---------------- PROJECTS ----------------%
+\\begin{rSection}{PROJECTS}
+${projects}
+\\end{rSection}
+
+\\end{document}`;
 }
