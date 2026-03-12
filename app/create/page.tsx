@@ -79,8 +79,7 @@ export default function CreatePage() {
         setError("Unexpected response from server.");
       }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Request failed. Please try again.";
+      const message = err instanceof Error ? err.message : "Request failed. Please try again.";
       setError(message);
     } finally {
       setLoading(false);
@@ -109,16 +108,13 @@ export default function CreatePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = form.name
-        ? `${form.name.replace(/\s+/g, "_")}_Resume.pdf`
-        : "Resume.pdf";
+      a.download = form.name ? `${form.name.replace(/\s+/g, "_")}_Resume.pdf` : "Resume.pdf";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "PDF compilation failed.";
+      const message = err instanceof Error ? err.message : "PDF compilation failed.";
       setError(message);
     } finally {
       setCompiling(false);
@@ -131,9 +127,7 @@ export default function CreatePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = form.name
-      ? `${form.name.replace(/\s+/g, "_")}_Resume.tex`
-      : "Resume.tex";
+    a.download = form.name ? `${form.name.replace(/\s+/g, "_")}_Resume.tex` : "Resume.tex";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -167,9 +161,7 @@ export default function CreatePage() {
           {fields.map((f) =>
             f.type === "input" ? (
               <div key={f.key}>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  {f.label}
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">{f.label}</label>
                 <input
                   className="w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-shadow"
                   placeholder={f.label}
@@ -179,9 +171,7 @@ export default function CreatePage() {
               </div>
             ) : (
               <div key={f.key}>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  {f.label}
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">{f.label}</label>
                 <textarea
                   className="w-full min-h-[80px] rounded-lg border border-zinc-300 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-shadow"
                   placeholder={f.label}
@@ -229,12 +219,7 @@ export default function CreatePage() {
                 {compiling ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-white" />
                 ) : (
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -251,12 +236,7 @@ export default function CreatePage() {
                 onClick={handleDownloadTex}
                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -272,12 +252,7 @@ export default function CreatePage() {
                 onClick={handleCopy}
                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -292,13 +267,9 @@ export default function CreatePage() {
             {/* LaTeX Preview */}
             <div className="rounded-lg border border-zinc-200 bg-zinc-900 overflow-hidden">
               <div className="flex items-center justify-between border-b border-zinc-700 px-4 py-2">
-                <span className="text-xs font-medium text-zinc-400">
-                  LaTeX Source
-                </span>
+                <span className="text-xs font-medium text-zinc-400">LaTeX Source</span>
                 <span className="text-xs text-zinc-500 font-mono">
-                  {form.name
-                    ? `${form.name.replace(/\s+/g, "_")}_Resume.tex`
-                    : "Resume.tex"}
+                  {form.name ? `${form.name.replace(/\s+/g, "_")}_Resume.tex` : "Resume.tex"}
                 </span>
               </div>
               <pre className="overflow-x-auto p-4 text-sm leading-relaxed text-green-400 font-mono max-h-[500px] overflow-y-auto">
