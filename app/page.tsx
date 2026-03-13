@@ -28,13 +28,13 @@ export default function Home() {
           <div className="rounded-lg border border-zinc-200 bg-white p-5">
             <h3 className="text-sm font-semibold text-zinc-900">ATS Analysis</h3>
             <p className="mt-1 text-sm text-zinc-500">
-              Get your resume scored and reviewed with detailed section feedback.
+              Upload your resume and get ATS scoring with detailed feedback.
             </p>
           </div>
           <div className="rounded-lg border border-zinc-200 bg-white p-5">
             <h3 className="text-sm font-semibold text-zinc-900">JD Matching</h3>
             <p className="mt-1 text-sm text-zinc-500">
-              Compare your resume against a job description for targeted improvements.
+              Add a job description only if you want role-specific matching.
             </p>
           </div>
           <div className="rounded-lg border border-zinc-200 bg-white p-5">

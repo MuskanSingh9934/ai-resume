@@ -10,7 +10,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing resumeText" }, { status: 400 });
     }
 
-    const aiText = await generateText({ prompt: resumeText }, systemAnalysePrompt);
+    const aiText = await generateText(
+      {
+        prompt: resumeText,
+        jobDescription:
+          typeof jobDescription === "string" && jobDescription.trim() ? jobDescription : undefined,
+      },
+      systemAnalysePrompt,
+    );
 
     if (aiText) {
       try {

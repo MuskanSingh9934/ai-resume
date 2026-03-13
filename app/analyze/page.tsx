@@ -12,6 +12,52 @@ interface AnalysisResult {
   error?: string;
 }
 
+async function extractResumeText(file: File) {
+  const lowerName = file.name.toLowerCase();
+
+  if (lowerName.endsWith(".txt")) {
+    return (await file.text()).trim();
+  }
+
+  if (lowerName.endsWith(".pdf")) {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+      import.meta.url,
+    ).toString();
+
+    const data = new Uint8Array(await file.arrayBuffer());
+    const loadingTask = pdfjs.getDocument({
+      data,
+      disableFontFace: true,
+      isEvalSupported: false,
+      useWorkerFetch: false,
+    });
+
+    const pdf = await loadingTask.promise;
+
+    try {
+      const pages = await Promise.all(
+        Array.from({ length: pdf.numPages }, async (_, index) => {
+          const page = await pdf.getPage(index + 1);
+          const content = await page.getTextContent();
+
+          return content.items
+            .map((item) => ("str" in item ? item.str : ""))
+            .join(" ")
+            .trim();
+        }),
+      );
+
+      return pages.filter(Boolean).join("\n\n").trim();
+    } finally {
+      await pdf.destroy();
+    }
+  }
+
+  throw new Error("Unsupported file type. Please upload a PDF or TXT file.");
+}
+
 export default function AnalyzePage() {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -19,7 +65,10 @@ export default function AnalyzePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const hasResume = resumeText.trim().length > 0;
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -27,28 +76,22 @@ export default function AnalyzePage() {
 
     setUploading(true);
     setError(null);
+    setResult(null);
+    setSelectedFileName(file.name);
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const base64 = btoa(
-        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""),
-      );
+      const text = await extractResumeText(file);
 
-      const res = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, data: base64 }),
-      });
-
-      const data = await res.json();
-
-      if (data.error) {
-        setError(`File extraction failed: ${data.error}`);
-      } else if (data.text) {
-        setResumeText(data.text);
+      if (!text) {
+        setError("File extraction failed: No readable text found in the uploaded file.");
+      } else {
+        setResumeText(text);
       }
-    } catch {
-      setError("Failed to upload and extract file.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to upload and extract the selected file.";
+      setError(`File extraction failed: ${message}`);
+      setSelectedFileName(null);
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -112,13 +155,13 @@ export default function AnalyzePage() {
 
         <h2 className="text-3xl font-bold text-zinc-900">Resume Analyzer</h2>
         <p className="mt-2 text-zinc-600">
-          Upload a file or paste your resume text below for an ATS analysis.
+          Upload your resume, optionally add a job description, and run the analysis.
         </p>
 
         {/* File Upload */}
         <div className="mt-6">
           <label className="block text-sm font-medium text-zinc-700 mb-2">
-            Upload Resume (PDF or Text)
+            Upload Resume (PDF or TXT)
           </label>
           <div className="flex items-center gap-3">
             <label className="cursor-pointer rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
@@ -126,7 +169,7 @@ export default function AnalyzePage() {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".pdf,.txt,.doc,.docx"
+                accept=".pdf,.txt"
                 onChange={handleFileUpload}
                 disabled={uploading}
                 className="hidden"
@@ -136,17 +179,12 @@ export default function AnalyzePage() {
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-black" />
             )}
           </div>
-        </div>
-
-        {/* Resume Text */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-zinc-700 mb-2">Resume Text</label>
-          <textarea
-            className="w-full min-h-[160px] rounded-lg border border-zinc-300 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-shadow"
-            value={resumeText}
-            onChange={(e) => setResumeText(e.target.value)}
-            placeholder="Paste your resume text here..."
-          />
+          <p className="mt-2 text-xs text-zinc-500">
+            PDF text is extracted in your browser before analysis. Text files are also supported.
+          </p>
+          {selectedFileName && !uploading && (
+            <p className="mt-2 text-sm text-zinc-600">Selected file: {selectedFileName}</p>
+          )}
         </div>
 
         {/* Job Description */}
@@ -157,8 +195,11 @@ export default function AnalyzePage() {
           <textarea
             className="w-full min-h-[100px] rounded-lg border border-zinc-300 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-shadow"
             value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            placeholder="Paste a job description to compare against..."
+            onChange={(e) => {
+              setJobDescription(e.target.value);
+              setResult(null);
+            }}
+            placeholder="Paste a job description if you want role-specific matching..."
           />
         </div>
 
@@ -166,7 +207,7 @@ export default function AnalyzePage() {
         <div className="mt-6">
           <button
             onClick={handleAnalyze}
-            disabled={loading || !resumeText.trim()}
+            disabled={loading || !hasResume}
             className="inline-flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading && (
@@ -257,7 +298,7 @@ export default function AnalyzePage() {
         {/* Empty state */}
         {!result && !error && !loading && (
           <p className="mt-8 text-center text-sm text-zinc-400">
-            Results will appear here after analysis.
+            Upload a resume to enable analysis.
           </p>
         )}
       </div>
