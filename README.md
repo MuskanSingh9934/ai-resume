@@ -35,7 +35,7 @@ This project helps users:
 ### 1. Clone the project
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/MuskanSingh9934/ai-resume.git
 cd ai-resume
 ```
 
@@ -55,7 +55,7 @@ GEMINI_API_KEY=your_google_gemini_api_key
 
 Notes:
 
-- `GEMINI_API_KEY` is optional, but recommended.
+- `GEMINI_API_KEY` is required.
 - If the key is missing or the AI response cannot be parsed, the app falls back to mock responses.
 - The LaTeX PDF compile route uses `https://latexonline.cc/compile`, so that feature requires internet access.
 
