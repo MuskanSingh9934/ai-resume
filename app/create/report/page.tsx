@@ -40,95 +40,134 @@ interface StoredResumeReport {
   createdAt?: string;
 }
 
-function addWrappedText(doc: jsPDF, text: string, x: number, y: number, maxWidth: number) {
+function addWrappedText(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight = 14,
+) {
   const lines = doc.splitTextToSize(text, maxWidth);
   doc.text(lines, x, y);
-  return y + lines.length * 6;
+  return y + lines.length * lineHeight;
 }
 
 function downloadResumePdf(resume: ResumeDocument) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageHeight = doc.internal.pageSize.getHeight();
-  const left = 48;
-  const right = 48;
+  const left = 42;
+  const right = 42;
   const maxWidth = doc.internal.pageSize.getWidth() - left - right;
-  let y = 56;
+  const pageBottom = pageHeight - 42;
+  const accent = [24, 24, 27] as const;
+  const muted = [82, 82, 91] as const;
+  const light = [212, 212, 216] as const;
+  let y = 46;
 
   function ensureSpace(minHeight = 40) {
-    if (y + minHeight <= pageHeight - 40) {
+    if (y + minHeight <= pageBottom) {
       return;
     }
 
     doc.addPage();
-    y = 56;
+    y = 46;
+  }
+
+  function textBlockHeight(text: string, width: number, lineHeight = 14) {
+    const lines = doc.splitTextToSize(text, width);
+    return lines.length * lineHeight;
   }
 
   function section(title: string) {
-    ensureSpace(32);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text(title.toUpperCase(), left, y);
-    y += 8;
-    doc.setLineWidth(0.6);
+    ensureSpace(36);
+    doc.setDrawColor(...light);
+    doc.setLineWidth(0.8);
     doc.line(left, y, left + maxWidth, y);
+    y += 14;
+    doc.setTextColor(...accent);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(title.toUpperCase(), left, y);
     y += 16;
   }
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text(resume.name || "Resume", left, y);
-  y += 18;
+  doc.setFillColor(250, 250, 250);
+  doc.roundedRect(left - 14, y - 22, maxWidth + 28, 78, 10, 10, "F");
+  doc.setDrawColor(235, 235, 235);
+  doc.roundedRect(left - 14, y - 22, maxWidth + 28, 78, 10, 10, "S");
 
+  doc.setTextColor(...accent);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.text(resume.name || "Resume", left, y);
+  y += 22;
+
+  doc.setTextColor(...muted);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   const contact = [resume.email, resume.phone].filter(Boolean).join(" | ");
   if (contact) {
     doc.text(contact, left, y);
-    y += 22;
+    y += 16;
   } else {
-    y += 10;
+    y += 8;
   }
+  y += 22;
 
   if (resume.summary) {
     section("Professional Summary");
+    doc.setTextColor(...muted);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    y = addWrappedText(doc, resume.summary, left, y, maxWidth);
-    y += 10;
+    doc.setFontSize(10.5);
+    ensureSpace(textBlockHeight(resume.summary, maxWidth, 14) + 12);
+    y = addWrappedText(doc, resume.summary, left, y, maxWidth, 14);
+    y += 8;
   }
 
   if (resume.skills && resume.skills.length > 0) {
     section("Skills");
+    doc.setTextColor(...muted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    y = addWrappedText(doc, resume.skills.join(", "), left, y, maxWidth);
-    y += 10;
+    const skillsText = resume.skills.join(", ");
+    ensureSpace(textBlockHeight(skillsText, maxWidth, 14) + 12);
+    y = addWrappedText(doc, skillsText, left, y, maxWidth, 14);
+    y += 8;
   }
 
   if (resume.experience && resume.experience.length > 0) {
     section("Experience");
     for (const item of resume.experience) {
-      ensureSpace(60);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text(
-        [item.title, item.company].filter(Boolean).join(" - ") || "Experience",
-        left,
-        y,
-      );
-      if (item.period) {
-        doc.setFont("helvetica", "normal");
-        doc.text(item.period, left + maxWidth, y, { align: "right" });
-      }
-      y += 14;
+      const roleHeading = [item.title, item.company].filter(Boolean).join(" - ") || "Experience";
+      const roleHeight = textBlockHeight(roleHeading, maxWidth - 90, 14);
+      const bulletsHeight = (item.bullets || []).reduce((total, bullet) => {
+        return total + textBlockHeight(`• ${bullet}`, maxWidth - 8, 14) + 4;
+      }, 0);
+      ensureSpace(roleHeight + bulletsHeight + 28);
 
+      doc.setTextColor(...accent);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
+      y = addWrappedText(doc, roleHeading, left, y, maxWidth - 90, 14);
+      if (item.period) {
+        doc.setTextColor(...muted);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.text(item.period, left + maxWidth, y - 14, { align: "right" });
+      }
+      y += 4;
+
+      doc.setTextColor(...muted);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       for (const bullet of item.bullets || []) {
-        ensureSpace(28);
-        const lines = doc.splitTextToSize(`• ${bullet}`, maxWidth - 8);
-        doc.text(lines, left + 8, y);
-        y += lines.length * 6 + 4;
+        ensureSpace(textBlockHeight(`• ${bullet}`, maxWidth - 8, 14) + 6);
+        doc.setTextColor(161, 161, 170);
+        doc.text("•", left + 8, y);
+        doc.setTextColor(...muted);
+        y = addWrappedText(doc, bullet, left + 18, y, maxWidth - 18, 14);
+        y += 4;
       }
       y += 6;
     }
@@ -137,19 +176,28 @@ function downloadResumePdf(resume: ResumeDocument) {
   if (resume.projects && resume.projects.length > 0) {
     section("Projects");
     for (const project of resume.projects) {
-      ensureSpace(40);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text(project.name || "Project", left, y);
-      y += 14;
+      const projectName = project.name || "Project";
+      const detailsHeight = (project.details || []).reduce((total, detail) => {
+        return total + textBlockHeight(`• ${detail}`, maxWidth - 8, 14) + 4;
+      }, 0);
+      ensureSpace(18 + detailsHeight + 20);
 
+      doc.setTextColor(...accent);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
+      y = addWrappedText(doc, projectName, left, y, maxWidth, 14);
+      y += 4;
+
+      doc.setTextColor(...muted);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       for (const detail of project.details || []) {
-        ensureSpace(28);
-        const lines = doc.splitTextToSize(`• ${detail}`, maxWidth - 8);
-        doc.text(lines, left + 8, y);
-        y += lines.length * 6 + 4;
+        ensureSpace(textBlockHeight(`• ${detail}`, maxWidth - 8, 14) + 6);
+        doc.setTextColor(161, 161, 170);
+        doc.text("•", left + 8, y);
+        doc.setTextColor(...muted);
+        y = addWrappedText(doc, detail, left + 18, y, maxWidth - 18, 14);
+        y += 4;
       }
       y += 6;
     }
@@ -157,32 +205,40 @@ function downloadResumePdf(resume: ResumeDocument) {
 
   if (resume.education && resume.education.length > 0) {
     section("Education");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
     for (const item of resume.education) {
-      ensureSpace(34);
-      const heading = [item.degree, item.institution].filter(Boolean).join(" - ");
-      if (heading) {
+      const educationHeading = [item.degree, item.institution].filter(Boolean).join(" - ");
+      const headingHeight = educationHeading ? textBlockHeight(educationHeading, maxWidth, 14) : 0;
+      const detailsHeight = item.details ? textBlockHeight(item.details, maxWidth, 14) : 0;
+      ensureSpace(headingHeight + detailsHeight + 18);
+
+      if (educationHeading) {
+        doc.setTextColor(...accent);
         doc.setFont("helvetica", "bold");
-        doc.text(heading, left, y);
-        y += 14;
+        doc.setFontSize(11);
+        y = addWrappedText(doc, educationHeading, left, y, maxWidth, 14);
       }
       if (item.details) {
+        doc.setTextColor(...muted);
         doc.setFont("helvetica", "normal");
-        y = addWrappedText(doc, item.details, left, y, maxWidth);
+        doc.setFontSize(10);
+        y = addWrappedText(doc, item.details, left, y, maxWidth, 14);
       }
-      y += 10;
+      y += 8;
     }
   }
 
   if (resume.certifications && resume.certifications.length > 0) {
     section("Certifications");
+    doc.setTextColor(...muted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     for (const cert of resume.certifications) {
-      ensureSpace(20);
-      doc.text(`• ${cert}`, left + 8, y);
-      y += 16;
+      ensureSpace(textBlockHeight(`• ${cert}`, maxWidth - 8, 14) + 6);
+      doc.setTextColor(161, 161, 170);
+      doc.text("•", left + 8, y);
+      doc.setTextColor(...muted);
+      y = addWrappedText(doc, cert, left + 18, y, maxWidth - 18, 14);
+      y += 4;
     }
   }
 
