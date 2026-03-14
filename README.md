@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Resume Toolkit
 
-## Getting Started
+AI Resume Toolkit is a Next.js application for analyzing resumes and generating ATS-friendly resumes with Google Gemini. It supports resume review, job-description matching, AI-assisted resume creation, and PDF export.
 
-First, run the development server:
+## What It Does
+
+This project helps users:
+
+- upload a resume in PDF or TXT format
+- analyze resume quality for ATS systems
+- compare a resume against a job description
+- generate a new ATS-friendly resume from user details
+- export resume output as PDF
+
+## Features
+
+- Resume analysis with ATS-style scoring
+- Job description matching for role-specific feedback
+- AI-generated resume content using Gemini
+- PDF and TXT resume text extraction
+- Resume report pages for analysis and generated output
+- PDF export support for generated resumes
+- Mock fallback responses when AI output is unavailable
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Google Generative AI SDK
+
+## Setup
+
+### 1. Clone the project
+
+```bash
+git clone <your-repository-url>
+cd ai-resume
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env` file in the project root:
+
+```env
+GEMINI_API_KEY=your_google_gemini_api_key
+```
+
+Notes:
+
+- `GEMINI_API_KEY` is optional, but recommended.
+- If the key is missing or the AI response cannot be parsed, the app falls back to mock responses.
+- The LaTeX PDF compile route uses `https://latexonline.cc/compile`, so that feature requires internet access.
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Build for production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```text
+ai-resume/
+├── app/
+│   ├── analyze/
+│   │   ├── page.tsx
+│   │   └── report/page.tsx
+│   ├── api/
+│   │   ├── analyze/route.ts
+│   │   ├── compile-latex/route.ts
+│   │   ├── extract/route.ts
+│   │   └── generate-resume/route.ts
+│   ├── create/
+│   │   ├── page.tsx
+│   │   └── report/page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── lib/
+│   ├── genai.ts
+│   ├── helper.ts
+│   └── resume-cls.ts
+├── public/
+├── rules/
+├── package.json
+└── README.md
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Folder Description
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### `app/`
 
-## Deploy on Vercel
+Main Next.js App Router code.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `app/page.tsx`: landing page
+- `app/analyze/page.tsx`: resume upload and analysis form
+- `app/analyze/report/page.tsx`: analysis results page
+- `app/create/page.tsx`: resume creation form
+- `app/create/report/page.tsx`: generated resume preview and export page
+- `app/api/*`: backend endpoints for extraction, analysis, resume generation, and PDF compilation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `lib/`
+
+Shared utility code.
+
+- `lib/genai.ts`: Gemini API wrapper and mock fallback data
+- `lib/helper.ts`: prompt templates for analysis and resume generation
+- `lib/resume-cls.ts`: LaTeX helper utilities for self-contained resume output
+
+### `public/`
+
+Static assets used by the frontend.
+
+### `rules/`
+
+Project prompt and instruction files used by the app logic.
+
+## API Endpoints
+
+- `POST /api/extract`: extracts text from uploaded PDF or TXT files
+- `POST /api/analyze`: analyzes resume text and optionally compares it with a job description
+- `POST /api/generate-resume`: generates resume JSON from user input
+- `POST /api/compile-latex`: compiles LaTeX resume content to PDF through an external service
+
+## Notes
+
+- Production builds use webpack in this project for build stability.
+- PDF text extraction works best for text-based PDFs, not scanned image-only files.
+- Some AI and PDF compilation features depend on external network access.

@@ -26,7 +26,7 @@ export async function generateText(
   }
 }
 
-export function mockAnalyze() {
+export function mockAnalyze(_resumeText?: string, _jobDescription?: string) {
   // Lightweight mock analysis used when API key is not configured or call fails.
   return {
     atsScore: 72,
