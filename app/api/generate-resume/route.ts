@@ -15,20 +15,20 @@ export async function POST(req: Request) {
     );
 
     if (aiText) {
-      // Strip markdown code fences if Gemini wraps the output
       const cleaned = aiText
-        .replace(/^```(?:latex|tex)?\s*\n?/i, "")
+        .replace(/^```(?:json)?\s*\n?/i, "")
         .replace(/\n?```\s*$/i, "")
         .trim();
 
-      if (cleaned.includes("\\documentclass")) {
-        return NextResponse.json({ latex: cleaned });
+      try {
+        return NextResponse.json({ resume: JSON.parse(cleaned) });
+      } catch (err) {
+        console.error("Failed to parse generated resume JSON.", err);
       }
     }
 
-    // Fallback mock
     const mock = mockGeneratedResume(data);
-    return NextResponse.json({ latex: mock });
+    return NextResponse.json({ resume: mock });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

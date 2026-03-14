@@ -48,47 +48,62 @@ export function mockAnalyze() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mockGeneratedResume(data: any): string {
+export function mockGeneratedResume(data: any) {
   const name = data.name || "John Doe";
   const email = data.email || "email@example.com";
   const phone = data.phone || "000-000-0000";
   const skills = Array.isArray(data.skills)
-    ? data.skills.join(", ")
-    : data.skills || "JavaScript, TypeScript, React";
-  const education = data.education || "B.S. Computer Science";
-  const experience = data.experience || "Software Engineer at Company";
-  const projects = data.projects || "Project description";
+    ? data.skills
+    : (data.skills || "JavaScript, TypeScript, React")
+        .split(",")
+        .map((skill: string) => skill.trim())
+        .filter(Boolean);
 
-  return `\\documentclass{resume}
-\\usepackage[left=0.6in, top=0.6in, right=0.6in, bottom=0.6in]{geometry}
-
-\\name{${name}}
-\\address{
-${phone} \\\\
-\\href{mailto:${email}}{${email}}
-}
-
-\\begin{document}
-
-%---------------- EDUCATION ----------------%
-\\begin{rSection}{EDUCATION}
-${education}
-\\end{rSection}
-
-%---------------- TECHNICAL SKILLS ----------------%
-\\begin{rSection}{TECHNICAL SKILLS}
-\\textbf{Skills:} ${skills} \\\\
-\\end{rSection}
-
-%---------------- EXPERIENCE ----------------%
-\\begin{rSection}{EXPERIENCE}
-${experience}
-\\end{rSection}
-
-%---------------- PROJECTS ----------------%
-\\begin{rSection}{PROJECTS}
-${projects}
-\\end{rSection}
-
-\\end{document}`;
+  return {
+    name,
+    email,
+    phone,
+    summary:
+      data.summary || "Results-driven professional with experience delivering ATS-friendly work.",
+    skills,
+    education: data.education
+      ? [
+          {
+            degree: "Education",
+            institution: data.education,
+            details: "",
+          },
+        ]
+      : [],
+    experience: data.experience
+      ? [
+          {
+            title: "Professional Experience",
+            company: "",
+            period: "",
+            bullets: data.experience
+              .split("\n")
+              .map((line: string) => line.trim())
+              .filter(Boolean),
+          },
+        ]
+      : [],
+    projects: data.projects
+      ? [
+          {
+            name: "Projects",
+            details: data.projects
+              .split("\n")
+              .map((line: string) => line.trim())
+              .filter(Boolean),
+          },
+        ]
+      : [],
+    certifications: data.certifications
+      ? data.certifications
+          .split("\n")
+          .map((line: string) => line.trim())
+          .filter(Boolean)
+      : [],
+  };
 }
